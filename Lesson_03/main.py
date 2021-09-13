@@ -6,9 +6,17 @@ class Application:
         self.running = True
         self.clock = pygame.time.Clock()
         pygame.display.set_caption('Tile Game Tutorial - Lesson 03')
+        # a group of all the sprites in this game
         self.sprite_group = pygame.sprite.Group()
+        # a group of all the wall sprites in this game
+        self.wall_group = pygame.sprite.Group()
         self.player = sprites.Player(self, 10, 10) 
-        
+        self.load_walls()
+    
+    def load_walls(self):
+        for x in range(10, 20):
+            sprites.Wall(self, x, 10)
+            
     def gameloop(self):
         keymap = {'up': False, 'down': False, 'left': False, 'right': False}
         while self.running:
