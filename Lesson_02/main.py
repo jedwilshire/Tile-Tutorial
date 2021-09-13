@@ -5,7 +5,7 @@ class Application:
         self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT))
         self.running = True
         self.clock = pygame.time.Clock()
-        pygame.display.set_caption('Tile Game Tutorial - Lesson 01')
+        pygame.display.set_caption('Tile Game Tutorial - Lesson 02')
         self.sprite_group = pygame.sprite.Group()
         self.player = sprites.Player(self, 10, 10) 
         
