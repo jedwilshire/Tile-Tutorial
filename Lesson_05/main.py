@@ -1,21 +1,29 @@
-import pygame, settings, sprites
+import pygame, settings, sprites, os
 
 class Application:
     def __init__(self):
         self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT))
         self.running = True
         self.clock = pygame.time.Clock()
-        pygame.display.set_caption('Tile Game Tutorial - Lesson 04')
+        pygame.display.set_caption('Tile Game Tutorial - Lesson 05')
         # a group of all the sprites in this game
         self.sprite_group = pygame.sprite.Group()
         # a group of all the wall sprites in this game
         self.wall_group = pygame.sprite.Group()
-        self.player = sprites.Player(self, 5, 5) 
         self.load_walls()
     
     def load_walls(self):
-        for x in range(10, 20):
-            sprites.Wall(self, x, 10)
+        wall_text = []
+        with open(os.path.join(os.path.dirname(__file__), 'map.txt'), 'r') as f:
+            for line in f:
+                wall_text.append(line.strip())
+        for y, row in enumerate(wall_text):
+            for x, tile in enumerate(row):
+                if tile == '1':
+                    sprites.Wall(self, x, y)
+                # position player in location from map.txt
+                elif tile == 'P':
+                    self.player = sprites.Player(self, x, y)
             
     def gameloop(self):
         keymap = {'up': False, 'down': False, 'left': False, 'right': False}
