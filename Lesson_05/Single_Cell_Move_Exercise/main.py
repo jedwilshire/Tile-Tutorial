@@ -5,7 +5,7 @@ class Application:
         self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT))
         self.running = True
         self.clock = pygame.time.Clock()
-        pygame.display.set_caption('Tile Game Tutorial - Lesson 05')
+        pygame.display.set_caption('Tile Game Tutorial - Lesson 05 One Tile Movement at a Time')
         # a group of all the sprites in this game
         self.sprite_group = pygame.sprite.Group()
         # a group of all the wall sprites in this game
@@ -34,13 +34,14 @@ class Application:
                 if event.type == pygame.QUIT:
                     self.running = False
                 elif event.type == pygame.KEYDOWN:
-                    self.handle_keydown(event, keymap)
-                    
-                elif event.type == pygame.KEYUP:
-                    self.handle_keyup(event, keymap)
-            
-            ### Move Player ###
-            self.handle_movement(keymap)
+                    if event.key == pygame.K_UP:
+                        self.player.move(dy = -1)
+                    elif event.key == pygame.K_DOWN:
+                        self.player.move(dy = 1)
+                    elif event.key == pygame.K_LEFT:
+                        self.player.move(dx = -1)
+                    elif event.key == pygame.K_RIGHT:
+                        self.player.move(dx = 1)                        
             
             self.screen.fill(settings.BLACK)
             self.show_tile_grid()
@@ -50,35 +51,6 @@ class Application:
             self.sprite_group.draw(self.screen)
             pygame.display.flip()
     
-    def handle_movement(self, keymap):
-        if keymap['left']:
-            self.player.move(dx = -1)
-        if keymap['right']:
-            self.player.move(dx = 1)
-        if keymap['up']:
-            self.player.move(dy = -1)
-        if keymap['down']:
-            self.player.move(dy = 1)
-    
-    def handle_keydown(self, event, keymap):
-        if event.key == pygame.K_UP:
-            keymap['up'] = True
-        elif event.key == pygame.K_DOWN:
-            keymap['down'] = True
-        elif event.key == pygame.K_LEFT:
-            keymap['left'] = True
-        elif event.key == pygame.K_RIGHT:
-            keymap['right'] = True
-            
-    def handle_keyup(self, event, keymap):
-        if event.key == pygame.K_UP:
-            keymap['up'] = False
-        elif event.key == pygame.K_DOWN:
-            keymap['down'] = False
-        elif event.key == pygame.K_LEFT:
-            keymap['left'] = False
-        elif event.key == pygame.K_RIGHT:
-            keymap['right'] = False
             
     def show_tile_grid(self):
         for x in range(0, settings.SCREEN_WIDTH, settings.TILE_SIZE):
