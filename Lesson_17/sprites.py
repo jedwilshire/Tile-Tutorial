@@ -53,6 +53,7 @@ class Player(pygame.sprite.Sprite):
         
         # create rect object for movement/collisions, set position
         self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
         
         # create a hit box rectangle that does not change in size with rotation
         self.hit_box_rect = pygame.Rect(0, 0, settings.TILE_SIZE, settings.TILE_SIZE)

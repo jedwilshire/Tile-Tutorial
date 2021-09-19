@@ -95,9 +95,10 @@ class Player(pygame.sprite.Sprite):
             if current_time - self.last_fire_time > settings.FIRE_RATE:
                 self.last_fire_time = current_time
                 spread = random.uniform(-settings.BULLET_SPREAD, settings.BULLET_SPREAD)
-                Bullet(self.game, self.pos + settings.GUN_BARREL_OFFSET.rotate(self.angle), self.angle + spread)
+                off_pos = self.pos + settings.GUN_BARREL_OFFSET.rotate(self.angle)
+                Bullet(self.game, off_pos, self.angle + spread)
                 self.vel += pygame.math.Vector2(-settings.BULLET_KICKBACK, 0).rotate(self.angle)
-   
+                ExplosionEffect(self.game, off_pos)
     def update(self):
         #print(self.pos, self.vel, self.angle)
         # we rework the update and movement from the ground up
@@ -138,6 +139,7 @@ class Player(pygame.sprite.Sprite):
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, game, pos, angle):
         super().__init__()
+        self._layer = settings.BULLET_LAYER
         self.game = game
         game.sprite_group.add(self)
         game.bullet_group.add(self)
@@ -166,6 +168,7 @@ class Bullet(pygame.sprite.Sprite):
 class Zombie(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
         super().__init__()
+        self._layer = settings.ZOMBIE_LAYER
         self.game = game
         
         self.image = game.zombie_image
@@ -177,8 +180,9 @@ class Zombie(pygame.sprite.Sprite):
         self.hit_box_rect = pygame.Rect(0, 0, settings.ZOMBIE_HIT_BOX_SIZE, settings.ZOMBIE_HIT_BOX_SIZE)
         self.hit_box_rect.center = self.rect.center
         
-        # vectors to control zombie motion
-        self.acc = pygame.math.Vector2(settings.ZOMBIE_ACCELERATION, 0)
+        # vectors to control zombie motion      
+        self.acceleration_rate = random.choice(settings.ZOMBIE_ACCELERATION)
+        self.acc = pygame.math.Vector2(self.acceleration_rate, 0)
         self.vel = pygame.math.Vector2(0, 0)
         
         # angle of rotatoin
@@ -188,6 +192,14 @@ class Zombie(pygame.sprite.Sprite):
         
         self.health = settings.ZOMBIE_HEALTH
     
+    def adjust_acc_for_avoidance(self, acc):
+        for zombie in self.game.zombie_group:
+            if zombie != self:
+                dist = self.pos - zombie.pos
+                if 0 < dist.length() < settings.AVOID_RADIUS:
+                    acc += dist.normalize()
+        return acc
+        
     def update(self):
         self.angle = (self.game.player.pos - self.pos).angle_to(pygame.math.Vector2(1, 0))
         self.image = pygame.transform.rotate(self.game.zombie_image, self.angle)
@@ -195,9 +207,10 @@ class Zombie(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         
         # rotate acceleraion vector to match angle of rotation
-        self.acc = pygame.math.Vector2(settings.ZOMBIE_ACCELERATION, 0).rotate(-self.angle)
-        
-        # adjust acceleration to simulate friciton (not a real physics equation?)
+        self.acc = pygame.math.Vector2(self.acceleration_rate, 0).rotate(-self.angle)
+        self.acc = self.acc.normalize()
+        self.acc = self.adjust_acc_for_avoidance(self.acc)
+        self.acc.scale_to_length(self.acceleration_rate)
         self.acc -= self.vel * settings.ZOMBIE_FRICTION
         
         # set new velocity vector
@@ -234,11 +247,29 @@ class Zombie(pygame.sprite.Sprite):
         rect = pygame.Rect(0, 0, int(self.image.get_width() * pct), 7)
         pygame.draw.rect(self.image, color, rect)
         
+            
+            
+class ExplosionEffect(pygame.sprite.Sprite):
+    def __init__(self, game, pos):
+        super().__init__()
+        self._layer = settings.EFFECTS_LAYER
+        self.game = game
+        self.game.sprite_group.add(self)
+        self.image = random.choice(self.game.flash_images)
+        self.spawn_time = pygame.time.get_ticks()
+        self.rect = self.image.get_rect()
+        self.rect.center = pos
+        
+    def update(self):
+        if pygame.time.get_ticks() - self.spawn_time > settings.FLASH_TIME:
+            self.kill()
+        
         
 
 class Wall(pygame.sprite.Sprite):
     def __init__(self, game, x, y, width, height):
         super().__init__()
+        self._layer = settings.WALL_LAYER
         self.game = game
         self.rect = pygame.Rect(x, y, width, height)
         self.rect.x = x 
