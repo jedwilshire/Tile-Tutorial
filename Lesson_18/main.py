@@ -24,7 +24,7 @@ class Application:
         self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT))
         self.running = True
         self.clock = pygame.time.Clock()
-        pygame.display.set_caption('Tile Game Tutorial - Lesson 14 Zombie and Player Health Bars')
+        pygame.display.set_caption('Tile Game Tutorial - Lesson 18 Zombie and Player Health Bars')
         
         # a group of all the sprites in this game
         self.sprite_group = pygame.sprite.LayeredUpdates()
