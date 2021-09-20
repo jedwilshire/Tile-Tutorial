@@ -10,7 +10,7 @@ def make_HUD(surface, player):
     health_pct = player.health / settings.PLAYER_HEALTH
     inner_rect_width = int(health_pct * health_bar_width)
     inner_rect = pygame.Rect(0, 0, inner_rect_width, health_bar_height)
-    pygame.draw.rect(surface, settings.BLACK, outer_rect, width = 2)
+    pygame.draw.rect(surface, settings.BLACK, outer_rect, 2)
     if health_pct > .60:
         color = settings.GREEN
     elif health_pct > .30:
