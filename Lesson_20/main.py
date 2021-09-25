@@ -24,7 +24,7 @@ class Application:
         self.screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT))
         self.running = True
         self.clock = pygame.time.Clock()
-        pygame.display.set_caption('Tile Game Tutorial - Lesson 19 Health and Items')
+        pygame.display.set_caption('Tile Game Tutorial - Lesson 20 Tweening Functions')
         
         # a group of all the sprites in this game
         self.sprite_group = pygame.sprite.LayeredUpdates()
@@ -115,7 +115,7 @@ class Application:
             self.screen.blit(sprite.image, self.camera.apply(sprite))
         
         # set our screen's caption to include game fps - for development purposes only
-        pygame.display.set_caption("Tile Game Tutorial - Lesson 19 Health and Items - FPS = {:.2f}".format(self.clock.get_fps()))
+        pygame.display.set_caption("Tile Game Tutorial - Lesson 20 Tweening Functions - FPS = {:.2f}".format(self.clock.get_fps()))
         
         # draw a player hit box rectangle for debugging and viewing purposes
         # pygame.draw.rect(self.screen, settings.WHITE, self.camera.apply_to_rect(self.player.hit_box_rect), width = 1)
@@ -153,7 +153,7 @@ class Application:
         player_hits = pygame.sprite.spritecollide(self.player, self.zombie_group, False, sprites.hit_box_to_hit_box_collide)
         for hit in player_hits:
             self.player.health -= settings.ZOMBIE_DAMAGE
-            self.player.vel += pygame.math.Vector2(settings.ZOMBIE_KNOCKBACK, 0).rotate(hit.angle)
+            self.player.pos += pygame.math.Vector2(settings.ZOMBIE_KNOCKBACK, 0).rotate(hit.angle)
             hit.vel = pygame.math.Vector2(-settings.ZOMBIE_KNOCKBACK, 0).rotate(hit.angle)
             if self.player.health <= 0:
                 self.running = False
