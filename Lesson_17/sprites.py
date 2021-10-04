@@ -169,7 +169,7 @@ class Zombie(pygame.sprite.Sprite):
         super().__init__()
         self.game = game
         
-        self.image = game.zombie_image
+        self.image = game.zombie_image.copy()
         self.rect = self.image.get_rect()
         self.pos = pygame.math.Vector2(x, y)
         self.rect.center = self.pos

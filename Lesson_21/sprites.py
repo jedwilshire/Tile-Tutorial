@@ -1,4 +1,5 @@
-import pygame, settings, math, os, random
+import pygame, math, os, random, pytweening
+from settings import *
 
 
 # To use Tiled Objects layer, we remove all multiply by tilesize
@@ -42,7 +43,7 @@ def check_for_collisions(sprite, sprite_group, direction):
 class Player(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
         super().__init__()
-        self._layer = settings.PLAYER_LAYER
+        self._layer = PLAYER_LAYER
         # keep refernce to our main.Applicaiton
         self.game = game
         
@@ -50,13 +51,13 @@ class Player(pygame.sprite.Sprite):
         self.image = self.game.player_image
         
         # scale image to our tile size (optional)
-        # self.image = pygame.transform.scale(self.image, (settings.TILE_SIZE, settings.TILE_SIZE))
+        # self.image = pygame.transform.scale(self.image, (TILE_SIZE, TILE_SIZE))
         
         # create rect object for movement/collisions, set position
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         # create a hit box rectangle that does not change in size with rotation
-        self.hit_box_rect = pygame.Rect(0, 0, settings.TILE_SIZE, settings.TILE_SIZE)
+        self.hit_box_rect = pygame.Rect(0, 0, TILE_SIZE, TILE_SIZE)
         self.hit_box_rect.center = self.rect.center
         
         # use a vector for position and velocity
@@ -73,8 +74,10 @@ class Player(pygame.sprite.Sprite):
         # last time gun fired
         self.last_fire_time = 0
         
-        self.health = settings.PLAYER_HEALTH
-    
+        self.health = PLAYER_HEALTH
+        
+        self.weapon = 'gun'
+        
     def check_keys(self):
         # assume no pressed
         self.vel.x, self.vel.y = 0, 0
@@ -83,23 +86,25 @@ class Player(pygame.sprite.Sprite):
         # True indicates key is pressed
         keys = pygame.key.get_pressed()
         if keys[pygame.K_UP] or keys[pygame.K_w]:
-            self.vel = pygame.math.Vector2(settings.PLAYER_SPEED, 0).rotate(self.angle)
+            self.vel = pygame.math.Vector2(PLAYER_SPEED, 0).rotate(self.angle)
         if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            self.vel = pygame.math.Vector2(-settings.PLAYER_SPEED / 2, 0).rotate(self.angle)
+            self.vel = pygame.math.Vector2(-PLAYER_SPEED / 2, 0).rotate(self.angle)
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            self.rotation_amt -= settings.PLAYER_ROTATION_SPEED
+            self.rotation_amt -= PLAYER_ROTATION_SPEED
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            self.rotation_amt += settings.PLAYER_ROTATION_SPEED
+            self.rotation_amt += PLAYER_ROTATION_SPEED
     
         if keys[pygame.K_SPACE]:
             current_time = pygame.time.get_ticks()
-            if current_time - self.last_fire_time > settings.FIRE_RATE:
+            if current_time - self.last_fire_time > FIRE_RATE:
                 self.last_fire_time = current_time
-                spread = random.uniform(-settings.BULLET_SPREAD, settings.BULLET_SPREAD)
-                off_pos = self.pos + settings.GUN_BARREL_OFFSET.rotate(self.angle)
+                spread = random.uniform(-BULLET_SPREAD, BULLET_SPREAD)
+                off_pos = self.pos + GUN_BARREL_OFFSET.rotate(self.angle)
                 Bullet(self.game, off_pos, self.angle + spread)
-                self.vel += pygame.math.Vector2(-settings.BULLET_KICKBACK, 0).rotate(self.angle)
+                self.vel += pygame.math.Vector2(-BULLET_KICKBACK, 0).rotate(self.angle)
                 ExplosionEffect(self.game, off_pos)
+                self.game.weapon_sounds[self.weapon].play()
+                
     def update(self):
         #print(self.pos, self.vel, self.angle)
         # we rework the update and movement from the ground up
@@ -138,12 +143,12 @@ class Player(pygame.sprite.Sprite):
         
     def use_health_pack(self, amt):
         self.health += amt
-        self.health = min(self.health, settings.PLAYER_HEALTH)
+        self.health = min(self.health, PLAYER_HEALTH)
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, game, pos, angle):
         super().__init__()
-        self._layer = settings.BULLET_LAYER
+        self._layer = BULLET_LAYER
         self.game = game
         game.sprite_group.add(self)
         game.bullet_group.add(self)
@@ -152,13 +157,13 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.center = pos
         self.angle = angle
         self.pos = pygame.math.Vector2(pos)
-        self.vel = pygame.math.Vector2(settings.BULLET_SPEED, 0).rotate(self.angle)
+        self.vel = pygame.math.Vector2(BULLET_SPEED, 0).rotate(self.angle)
         self.spawn_time = pygame.time.get_ticks()
                                        
     def update(self):
         self.pos += self.vel * self.game.dt
         self.rect.center = self.pos
-        if pygame.time.get_ticks() - self.spawn_time > settings.BULLET_LIFE:
+        if pygame.time.get_ticks() - self.spawn_time > BULLET_LIFE:
             self.kill()
         
         if pygame.sprite.spritecollideany(self, self.game.wall_group):
@@ -172,21 +177,20 @@ class Bullet(pygame.sprite.Sprite):
 class Zombie(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
         super().__init__()
-        self._layer = settings.ZOMBIE_LAYER
-        self.game = game
-        
+        self._layer = ZOMBIE_LAYER
+        self.game = game        
         self.image = game.zombie_image.copy()
         self.rect = self.image.get_rect()
         self.pos = pygame.math.Vector2(x, y)
         self.rect.center = self.pos
         
         # create a hit box for the zombie, center on rect
-        self.hit_box_rect = pygame.Rect(0, 0, settings.ZOMBIE_HIT_BOX_SIZE, settings.ZOMBIE_HIT_BOX_SIZE)
+        self.hit_box_rect = pygame.Rect(0, 0, ZOMBIE_HIT_BOX_SIZE, ZOMBIE_HIT_BOX_SIZE)
         self.hit_box_rect.center = self.rect.center
         
         # vectors to control zombie motion      
-        self.acceleration_rate = random.choice(settings.ZOMBIE_ACCELERATION)
-        self.acc = pygame.math.Vector2(self.acceleration_rate, 0)
+        self.acceleration_rate = random.choice(ZOMBIE_ACCELERATION)
+        self.acc = pygame.math.Vector2(0, 0)
         self.vel = pygame.math.Vector2(0, 0)
         
         # angle of rotatoin
@@ -194,69 +198,85 @@ class Zombie(pygame.sprite.Sprite):
         self.game.sprite_group.add(self)
         self.game.zombie_group.add(self)
         
-        self.health = settings.ZOMBIE_HEALTH
+        self.health = ZOMBIE_HEALTH
     
     def adjust_acc_for_avoidance(self, acc):
         for zombie in self.game.zombie_group:
             if zombie != self:
                 dist = self.pos - zombie.pos
-                if 0 < dist.length() < settings.AVOID_RADIUS:
+                if 0 < dist.length_squared() < AVOID_RADIUS ** 2:
                     acc += dist.normalize()
         return acc
         
     def update(self):
-        self.angle = (self.game.player.pos - self.pos).angle_to(pygame.math.Vector2(1, 0))
+        distance = self.game.player.pos - self.pos
+        
+        # adjust accelleration and velocity based on player position if player is
+        # is within zombie detect radius
+        if distance.length_squared() < ZOMBIE_DETECT_RADIUS ** 2:  # use length squared to avoid slowness of squareroot
+            self.angle = distance.angle_to(pygame.math.Vector2(1, 0))
+            
+            # recenter image
+            self.rect = self.image.get_rect()
+            
+            # rotate acceleraion vector to match angle of rotation
+            self.acc = pygame.math.Vector2(self.acceleration_rate, 0).rotate(-self.angle)
+            self.acc = self.acc.normalize()
+            self.acc = self.adjust_acc_for_avoidance(self.acc)
+            self.acc.scale_to_length(self.acceleration_rate)
+            self.acc -= self.vel * ZOMBIE_FRICTION
+            
+            # set new velocity vector
+            self.vel += self.acc * self.game.dt
+            
+            # move position by velocity
+            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+            
+            # move and check each direction
+            self.hit_box_rect.centerx = self.pos.x
+            check_for_collisions(self, self.game.wall_group, 'x')
+            self.hit_box_rect.centerx = self.pos.x
+            
+            self.hit_box_rect.centery = self.pos.y
+            check_for_collisions(self, self.game.wall_group, 'y')
+            self.hit_box_rect.centery = self.pos.y
+            
+            self.rect.center = self.hit_box_rect.center
+            
+            #occassional zombie sounds (average 1 per 200 frames
+            if random.randint(0, 200) < 1:
+                random.choice(self.game.zombie_sounds).play()
+        # move this image update out of if statement to avoid a health bar drawing bug when
+        # zombie is not moving
         self.image = pygame.transform.rotate(self.game.zombie_image, self.angle)
-        # recenter image
-        self.rect = self.image.get_rect()
         
-        # rotate acceleraion vector to match angle of rotation
-        self.acc = pygame.math.Vector2(self.acceleration_rate, 0).rotate(-self.angle)
-        self.acc = self.acc.normalize()
-        self.acc = self.adjust_acc_for_avoidance(self.acc)
-        self.acc.scale_to_length(self.acceleration_rate)
-        self.acc -= self.vel * settings.ZOMBIE_FRICTION
-        
-        # set new velocity vector
-        self.vel += self.acc * self.game.dt
-        
-        # move position by velocity
-        self.pos += self.vel * self.game.dt + 1.0/2.0 * self.acc * self.game.dt ** 2
-        
-        # move and check each direction
-        self.hit_box_rect.centerx = self.pos.x
-        check_for_collisions(self, self.game.wall_group, 'x')
-        self.hit_box_rect.centerx = self.pos.x
-        
-        self.hit_box_rect.centery = self.pos.y
-        check_for_collisions(self, self.game.wall_group, 'y')
-        self.hit_box_rect.centery = self.pos.y
-        
-        self.rect.center = self.hit_box_rect.center
-        
-        if self.health < settings.ZOMBIE_HEALTH:
+        if self.health < ZOMBIE_HEALTH:
             self.draw_health_bar()
             
         if self.health <= 0:
+            self.game.zombie_splat_sound.play()
+            self.game.map_image.blit(self.game.zombie_splat_image, self.pos - pygame.math.Vector2(32, 32))
             self.kill()
             
     def draw_health_bar(self):
-        pct = self.health / settings.ZOMBIE_HEALTH
+        pct = self.health / ZOMBIE_HEALTH
         if pct > .6:
-            color = settings.GREEN
+            color = GREEN
         elif pct > .3:
-            color = settings.YELLOW
+            color = YELLOW
         else:
-            color = settings.RED
-        rect = pygame.Rect(0, 0, int(self.image.get_width() * pct), 7)
-        pygame.draw.rect(self.image, color, rect)
+            color = RED
+        health_bar_height = 7
+        self.health_bar = pygame.Rect(0, 0, self.rect.width, health_bar_height)
+        self.health_bar = pygame.Rect(0, 0, int(self.rect.width * pct), health_bar_height)
+        pygame.draw.rect(self.image, color, self.health_bar)
         
             
             
 class ExplosionEffect(pygame.sprite.Sprite):
     def __init__(self, game, pos):
         super().__init__()
-        self._layer = settings.EFFECTS_LAYER
+        self._layer = EFFECTS_LAYER
         self.game = game
         self.game.sprite_group.add(self)
         self.image = random.choice(self.game.flash_images)
@@ -265,26 +285,39 @@ class ExplosionEffect(pygame.sprite.Sprite):
         self.rect.center = pos
         
     def update(self):
-        if pygame.time.get_ticks() - self.spawn_time > settings.FLASH_TIME:
+        if pygame.time.get_ticks() - self.spawn_time > FLASH_TIME:
             self.kill()
         
 
 class Item(pygame.sprite.Sprite):
     def __init__(self, game, item_type, x, y):
         super().__init__()
-        self._layer = settings.ITEMS_LAYER
+        self._layer = ITEMS_LAYER
         self.game = game
         self.item_type = item_type
         self.image = game.item_images[item_type]
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
+        self.pos = pygame.math.Vector2(x, y)
         self.game.item_group.add(self)
         self.game.sprite_group.add(self)
+        self.tween_step = 0
+        self.tween_dir = 1
+    
+    def update(self):
+        rng = ITEM_BOB_RANGE
+        offset = rng * (pytweening.easeInOutSine(self.tween_step / rng) - 0.5)
+        self.rect.centery = self.pos.y + offset * self.tween_dir
+        self.tween_step += ITEM_BOB_RATE
+        if self.tween_step > rng:
+            self.tween_step = 0
+            self.tween_dir *= -1
+        
 
 class Wall(pygame.sprite.Sprite):
     def __init__(self, game, x, y, width, height):
         super().__init__()
-        self._layer = settings.WALL_LAYER
+        self._layer = WALL_LAYER
         self.game = game
         self.rect = pygame.Rect(x, y, width, height)
         self.rect.x = x 
